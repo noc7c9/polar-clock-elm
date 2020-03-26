@@ -1,0 +1,140 @@
+module Main exposing (Model, Msg(..), init, main, subscriptions, update, view)
+
+import Browser
+import Browser.Events
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
+import PolarClock exposing (polarClock)
+import Task
+import Time
+
+
+
+-- MAIN
+
+
+main =
+    Browser.element
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        }
+
+
+
+-- MODEL
+
+
+type TimeValue
+    = RealTime Time.Posix
+    | ManualTime Int
+
+
+type alias Model =
+    { zone : Time.Zone
+    , time : Time.Posix
+    , debugOffset : Int
+    }
+
+
+init : () -> ( Model, Cmd Msg )
+init _ =
+    let
+        model =
+            { zone = Time.utc
+            , time = Time.millisToPosix 0
+            , debugOffset = 0
+            }
+
+        cmd =
+            Task.perform AdjustTimeZone Time.here
+    in
+    ( model, cmd )
+
+
+
+-- UPDATE
+
+
+type Msg
+    = Tick Time.Posix
+    | AdjustTimeZone Time.Zone
+    | DebugOffsetIncrement Int
+    | DebugOffsetDecrement Int
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    let
+        updatedModel =
+            case msg of
+                Tick newTime ->
+                    { model | time = newTime }
+
+                AdjustTimeZone newZone ->
+                    { model | zone = newZone }
+
+                DebugOffsetIncrement value ->
+                    { model | debugOffset = model.debugOffset + value }
+
+                DebugOffsetDecrement value ->
+                    { model | debugOffset = model.debugOffset - value }
+    in
+    ( updatedModel, Cmd.none )
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Browser.Events.onAnimationFrame Tick
+
+
+
+-- VIEW
+
+
+view : Model -> Html Msg
+view model =
+    div []
+        [ viewPolarClock model
+        , viewDebug model
+        ]
+
+
+viewDebug : Model -> Html Msg
+viewDebug model =
+    let
+        buttonGroup label offset =
+            div []
+                [ text label
+                , button [ onClick (DebugOffsetIncrement offset) ] [ text "+" ]
+                , button [ onClick (DebugOffsetDecrement offset) ] [ text "-" ]
+                ]
+    in
+    div [ id "debug" ]
+        [ buttonGroup "Second" 1000
+        , buttonGroup "Minute" (1000 * 60)
+        , buttonGroup "Hour" (1000 * 60 * 60)
+        , buttonGroup "Day" (1000 * 60 * 60 * 24)
+        , buttonGroup "Month" (1000 * 60 * 60 * 24 * 30)
+        ]
+
+
+viewPolarClock : Model -> Html Msg
+viewPolarClock model =
+    let
+        settings =
+            { arcWidth = 5
+            , gapWidth = 1
+            , margin = 3
+            }
+
+        time =
+            Time.millisToPosix (model.debugOffset + Time.posixToMillis model.time)
+    in
+    polarClock settings model.zone time
