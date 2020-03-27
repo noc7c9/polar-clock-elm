@@ -1,7 +1,7 @@
 module PolarClock exposing (..)
 
-import Arc exposing (Coord, arc)
 import Html exposing (Html)
+import Html.Attributes
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import Time
@@ -204,26 +204,224 @@ polarClock settings zone posix =
 viewArc : Coord -> String -> String -> Float -> Float -> Float -> Html msg
 viewArc center name color innerRadius outerRadius angle =
     let
-        arcSettings =
-            { center = center
-            , innerRadius = innerRadius
-            , outerRadius = outerRadius
-            , startAngle = 0
-            , endAngle = angle
-            , borderRadius = 0.6
-            }
+        fontSize =
+            "2.4px"
 
-        arcAttrs =
-            -- [ id name, fill "none", strokeWidth "0.2", stroke color ]
-            [ id name, fill color, stroke "none" ]
+        textPad =
+            0.5
 
-        textAttrs =
-            [ fontSize "2.4", fontFamily "'Lato', sans-serif" ]
+        centerRadius =
+            (innerRadius + outerRadius) / 2
+
+        circle =
+            Svg.path
+                [ fill "none"
+                , stroke "black"
+                , d (arcPath center centerRadius 0 (2 * pi - 0.0000001) True)
+                ]
+                []
+
+        arc =
+            Svg.path
+                [ fill color
+                , stroke "none"
+                , d (arcShape center innerRadius outerRadius 0 angle 0.6)
+                ]
+                []
+
+        textFlipped =
+            angle < (pi / 2) || angle > (3 * pi / 2)
+
+        textPadRadius =
+            textPad / centerRadius
+
+        textArc =
+            Svg.path
+                [ id name
+                , fill "none"
+                , stroke "none"
+                , d
+                    (arcPath center
+                        (if textFlipped then
+                            centerRadius
+
+                         else
+                            centerRadius + 1.5
+                        )
+                        textPadRadius
+                        (angle - textPadRadius)
+                        (not textFlipped)
+                    )
+                ]
+                []
     in
     g []
-        [ arc arcAttrs arcSettings
-        , Svg.text_ textAttrs
-            [ Svg.textPath [ xlinkHref ("#" ++ name), startOffset "0" ]
+        [ circle
+        , arc
+        , textArc
+        , Svg.text_
+            [ Svg.Attributes.fontSize fontSize
+            , fontFamily "'Lato', sans-serif"
+            ]
+            [ Svg.textPath
+                [ xlinkHref ("#" ++ name)
+                , startOffset
+                    (if textFlipped then
+                        "100%"
+
+                     else
+                        "0%"
+                    )
+                , textAnchor
+                    (if textFlipped then
+                        "end"
+
+                     else
+                        "start"
+                    )
+                ]
                 [ Svg.text (name ++ ": " ++ String.fromInt (floor angle)) ]
             ]
         ]
+
+
+type alias Coord =
+    { x : Float, y : Float }
+
+
+arcPath : Coord -> Float -> Float -> Float -> Bool -> String
+arcPath center radius startAngle endAngle reverse =
+    let
+        start =
+            polarToCartesian center radius startAngle
+
+        end =
+            polarToCartesian center radius endAngle
+
+        largeArc =
+            (endAngle - startAngle) > pi
+    in
+    if reverse then
+        String.join " "
+            [ moveTo end
+            , arcTo radius radius start largeArc False
+            ]
+
+    else
+        String.join " "
+            [ moveTo start
+            , arcTo radius radius end largeArc True
+            ]
+
+
+arcShape : Coord -> Float -> Float -> Float -> Float -> Float -> String
+arcShape center innerRadius outerRadius startAngle endAngle rawBorderRadius =
+    let
+        borderRadius =
+            -- Clamp to half the stroke width so the arc ends are half-circles
+            Basics.min rawBorderRadius ((outerRadius - innerRadius) / 2)
+
+        outerBorderRadiusAngle =
+            borderRadius / outerRadius
+
+        innerBorderRadiusAngle =
+            borderRadius / innerRadius
+
+        innerStartAngle =
+            startAngle + innerBorderRadiusAngle
+
+        innerEndAngle =
+            endAngle - innerBorderRadiusAngle
+
+        innerStart =
+            polarToCartesian center innerRadius innerStartAngle
+
+        innerCenterStart =
+            polarToCartesian center (innerRadius + borderRadius) startAngle
+
+        innerEnd =
+            polarToCartesian center innerRadius innerEndAngle
+
+        innerCenterEnd =
+            polarToCartesian center (innerRadius + borderRadius) endAngle
+
+        outerStartAngle =
+            startAngle + outerBorderRadiusAngle
+
+        outerEndAngle =
+            endAngle - outerBorderRadiusAngle
+
+        outerStart =
+            polarToCartesian center outerRadius outerStartAngle
+
+        outerCenterStart =
+            polarToCartesian center (outerRadius - borderRadius) startAngle
+
+        outerEnd =
+            polarToCartesian center outerRadius outerEndAngle
+
+        outerCenterEnd =
+            polarToCartesian center (outerRadius - borderRadius) endAngle
+
+        innerLargeArc =
+            (innerEndAngle - innerStartAngle) > pi
+
+        outerLargeArc =
+            (outerEndAngle - outerStartAngle) > pi
+    in
+    String.join " "
+        [ moveTo innerCenterStart
+        , arcTo borderRadius borderRadius innerStart False False
+        , arcTo innerRadius innerRadius innerEnd innerLargeArc True
+        , arcTo borderRadius borderRadius innerCenterEnd False False
+        , lineTo outerCenterEnd
+        , arcTo borderRadius borderRadius outerEnd False False
+        , arcTo outerRadius outerRadius outerStart outerLargeArc False
+        , arcTo borderRadius borderRadius outerCenterStart False False
+        , join
+        ]
+
+
+moveTo : Coord -> String
+moveTo coord =
+    "M " ++ String.fromFloat coord.x ++ "," ++ String.fromFloat coord.y
+
+
+lineTo : Coord -> String
+lineTo coord =
+    "L " ++ String.fromFloat coord.x ++ "," ++ String.fromFloat coord.y
+
+
+arcTo : Float -> Float -> Coord -> Bool -> Bool -> String
+arcTo rx ry end largeArc sweepFlag =
+    let
+        boolToString value =
+            if value then
+                "1"
+
+            else
+                "0"
+    in
+    String.join " "
+        [ "A"
+        , String.fromFloat rx
+        , ","
+        , String.fromFloat ry
+        , "0"
+        , boolToString largeArc
+        , boolToString sweepFlag
+        , String.fromFloat end.x
+        , String.fromFloat end.y
+        ]
+
+
+join : String
+join =
+    "Z"
+
+
+polarToCartesian : Coord -> Float -> Float -> Coord
+polarToCartesian center radius angle =
+    { x = center.x + radius * sin angle
+    , y = center.y - radius * cos angle
+    }
