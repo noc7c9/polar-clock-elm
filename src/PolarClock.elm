@@ -227,31 +227,3 @@ viewArc center name color innerRadius outerRadius angle =
                 [ Svg.text (name ++ ": " ++ String.fromInt (floor angle)) ]
             ]
         ]
-
-
-viewArcUnRounded : Coord -> String -> String -> Float -> Float -> Float -> Html msg
-viewArcUnRounded center name color innerRadius outerRadius angle =
-    let
-        arcSettings =
-            { center = center
-            , innerRadius = innerRadius
-            , outerRadius = outerRadius
-            , startAngle = 0
-            , endAngle = angle
-            , borderRadius = 0
-            }
-
-        arcAttrs =
-            -- [ id name, fill "none", strokeWidth "0.2", stroke color ]
-            [ id name, fill color, stroke "none" ]
-
-        textAttrs =
-            [ fontSize "2.4", fontFamily "'Lato', sans-serif" ]
-    in
-    g []
-        [ arc arcAttrs arcSettings
-        , Svg.text_ textAttrs
-            [ Svg.textPath [ xlinkHref ("#" ++ name), startOffset "0" ]
-                [ Svg.text (name ++ ": " ++ String.fromInt (floor angle)) ]
-            ]
-        ]
