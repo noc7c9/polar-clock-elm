@@ -36,6 +36,7 @@ type alias Model =
     { zone : Time.Zone
     , time : Time.Posix
     , debugOffset : Int
+    , debugPaused : Bool
     }
 
 
@@ -46,6 +47,7 @@ init _ =
             { zone = Time.utc
             , time = Time.millisToPosix 0
             , debugOffset = 0
+            , debugPaused = False
             }
 
         cmd =
@@ -64,6 +66,7 @@ type Msg
     | DebugOffsetIncrement Int
     | DebugOffsetDecrement Int
     | DebugOffsetReset
+    | DebugTogglePause
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -85,6 +88,9 @@ update msg model =
 
                 DebugOffsetReset ->
                     { model | debugOffset = 0 }
+
+                DebugTogglePause ->
+                    { model | debugPaused = not model.debugPaused }
     in
     ( updatedModel, Cmd.none )
 
@@ -95,7 +101,11 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Browser.Events.onAnimationFrame Tick
+    if model.debugPaused then
+        Sub.none
+
+    else
+        Browser.Events.onAnimationFrame Tick
 
 
 
@@ -127,6 +137,15 @@ viewDebug model =
         , buttonGroup "Day" (1000 * 60 * 60 * 24)
         , buttonGroup "Month" (1000 * 60 * 60 * 24 * 30)
         , button [ onClick DebugOffsetReset ] [ text "Reset" ]
+        , button [ onClick DebugTogglePause ]
+            [ text
+                (if model.debugPaused then
+                    "Play"
+
+                 else
+                    "Pause"
+                )
+            ]
         ]
 
 
