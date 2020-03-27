@@ -63,6 +63,7 @@ type Msg
     | AdjustTimeZone Time.Zone
     | DebugOffsetIncrement Int
     | DebugOffsetDecrement Int
+    | DebugOffsetReset
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -81,6 +82,9 @@ update msg model =
 
                 DebugOffsetDecrement value ->
                     { model | debugOffset = model.debugOffset - value }
+
+                DebugOffsetReset ->
+                    { model | debugOffset = 0 }
     in
     ( updatedModel, Cmd.none )
 
@@ -122,6 +126,7 @@ viewDebug model =
         , buttonGroup "Hour" (1000 * 60 * 60)
         , buttonGroup "Day" (1000 * 60 * 60 * 24)
         , buttonGroup "Month" (1000 * 60 * 60 * 24 * 30)
+        , button [ onClick DebugOffsetReset ] [ text "Reset" ]
         ]
 
 
