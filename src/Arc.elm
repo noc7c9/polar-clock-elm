@@ -36,6 +36,12 @@ arcPath settings =
         outerRadius =
             settings.outerRadius
 
+        startAngle =
+            settings.startAngle
+
+        endAngle =
+            settings.endAngle
+
         borderRadius =
             -- Clamp to half the stroke width so the arc ends are half-circles
             Basics.min settings.borderRadius ((outerRadius - innerRadius) / 2)
@@ -46,49 +52,56 @@ arcPath settings =
         innerBorderRadiusAngle =
             borderRadius / innerRadius
 
+        innerStartAngle =
+            startAngle + innerBorderRadiusAngle
+
+        innerEndAngle =
+            endAngle - innerBorderRadiusAngle
+
         innerStart =
-            polarToCartesian center
-                innerRadius
-                (settings.startAngle + innerBorderRadiusAngle)
+            polarToCartesian center innerRadius innerStartAngle
 
         innerCenterStart =
-            polarToCartesian center (innerRadius + borderRadius) settings.startAngle
+            polarToCartesian center (innerRadius + borderRadius) startAngle
 
         innerEnd =
-            polarToCartesian center
-                innerRadius
-                (settings.endAngle - innerBorderRadiusAngle)
+            polarToCartesian center innerRadius innerEndAngle
 
         innerCenterEnd =
-            polarToCartesian center (innerRadius + borderRadius) settings.endAngle
+            polarToCartesian center (innerRadius + borderRadius) endAngle
+
+        outerStartAngle =
+            startAngle + outerBorderRadiusAngle
+
+        outerEndAngle =
+            endAngle - outerBorderRadiusAngle
 
         outerStart =
-            polarToCartesian center
-                outerRadius
-                (settings.startAngle + outerBorderRadiusAngle)
+            polarToCartesian center outerRadius outerStartAngle
 
         outerCenterStart =
-            polarToCartesian center (outerRadius - borderRadius) settings.startAngle
+            polarToCartesian center (outerRadius - borderRadius) startAngle
 
         outerEnd =
-            polarToCartesian center
-                outerRadius
-                (settings.endAngle - outerBorderRadiusAngle)
+            polarToCartesian center outerRadius outerEndAngle
 
         outerCenterEnd =
-            polarToCartesian center (outerRadius - borderRadius) settings.endAngle
+            polarToCartesian center (outerRadius - borderRadius) endAngle
 
-        largeArc =
-            (settings.endAngle - settings.startAngle) > pi
+        innerLargeArc =
+            (innerEndAngle - innerStartAngle) > pi
+
+        outerLargeArc =
+            (outerEndAngle - outerStartAngle) > pi
     in
     String.join " "
         [ moveTo innerCenterStart
         , arcTo borderRadius borderRadius innerStart False False
-        , arcTo innerRadius innerRadius innerEnd largeArc True
+        , arcTo innerRadius innerRadius innerEnd innerLargeArc True
         , arcTo borderRadius borderRadius innerCenterEnd False False
         , lineTo outerCenterEnd
         , arcTo borderRadius borderRadius outerEnd False False
-        , arcTo outerRadius outerRadius outerStart largeArc False
+        , arcTo outerRadius outerRadius outerStart outerLargeArc False
         , arcTo borderRadius borderRadius outerCenterStart False False
         , join
         ]
