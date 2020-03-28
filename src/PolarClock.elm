@@ -177,41 +177,16 @@ arc id center label textPad textRadius textAttrs color borderRadius innerRadius 
 
         textPadRadius =
             textPad / centerRadius
-    in
-    g []
-        [ -- black circle stroke in the background
-          Svg.circle
-            [ fill "none"
-            , stroke "black"
-            , cx (String.fromFloat center.x)
-            , cy (String.fromFloat center.y)
-            , r (String.fromFloat centerRadius)
-            ]
-            []
 
-        -- The arc
-        , Svg.path
-            [ fill color
-            , stroke "none"
-            , d (SvgUtils.arcShapePath center innerRadius outerRadius startAngle endAngle borderRadius)
-            ]
-            []
+        arcPath =
+            SvgUtils.arcShapePath center innerRadius outerRadius startAngle endAngle borderRadius
 
-        -- The path for the label text
-        , Svg.path
-            [ Html.Attributes.id id
-            , fill "none"
-            , stroke "none"
-            , d
-                (SvgUtils.arcLinePath center textRadius (startAngle + textPadRadius) (endAngle - textPadRadius) (not textFlipped))
-            ]
-            []
+        textPath =
+            SvgUtils.arcLinePath center textRadius (endAngle - textPadRadius - pi) (endAngle - textPadRadius) (not textFlipped)
 
-        -- The label text
-        , Svg.text_
-            textAttrs
-            [ Svg.textPath
-                [ xlinkHref ("#" ++ id)
+        textPathElement =
+            Svg.textPath
+                [ xlinkHref ("#" ++ id ++ "-path")
                 , dominantBaseline "middle"
                 , startOffset
                     (if textFlipped then
@@ -229,7 +204,46 @@ arc id center label textPad textRadius textAttrs color borderRadius innerRadius 
                     )
                 ]
                 [ Svg.text label ]
+    in
+    g []
+        [ -- black circle stroke in the background
+          Svg.circle
+            [ fill "none"
+            , stroke "black"
+            , cx (String.fromFloat center.x)
+            , cy (String.fromFloat center.y)
+            , r (String.fromFloat centerRadius)
             ]
+            []
+
+        -- The path for the label text
+        , Svg.path
+            [ Html.Attributes.id (id ++ "-path")
+            , fill "none"
+            , stroke "none"
+            , d textPath
+            ]
+            []
+
+        -- The white background label text
+        , Svg.text_ (fill "white" :: textAttrs) [ textPathElement ]
+
+        -- The arc
+        , Svg.path [ fill color, stroke "none", d arcPath ] []
+
+        -- The arc as a clip-path for the label text
+        , Svg.defs []
+            [ Svg.clipPath
+                [ Html.Attributes.id (id ++ "-clip-path") ]
+                [ Svg.path [ fill color, stroke "none", d arcPath ] [] ]
+            ]
+
+        -- The black foreground label text
+        , Svg.text_
+            (Svg.Attributes.clipPath ("url(#" ++ id ++ "-clip-path)")
+                :: textAttrs
+            )
+            [ textPathElement ]
         ]
 
 
