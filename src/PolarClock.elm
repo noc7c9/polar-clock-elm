@@ -180,10 +180,12 @@ arc id center label textPad textRadius textAttrs color borderRadius innerRadius 
     in
     g []
         [ -- black circle stroke in the background
-          Svg.path
+          Svg.circle
             [ fill "none"
             , stroke "black"
-            , d (SvgUtils.arcLinePath center centerRadius 0 (2 * pi - 0.0000001) True)
+            , cx (String.fromFloat center.x)
+            , cy (String.fromFloat center.y)
+            , r (String.fromFloat centerRadius)
             ]
             []
 
