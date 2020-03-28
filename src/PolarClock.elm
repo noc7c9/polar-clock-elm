@@ -21,12 +21,14 @@ type alias Settings =
     { arcWidth : Float
     , gapWidth : Float
     , margin : Float
+    , arcBorderRadius : Float
     , colorInitial : Float
     , colorDifference : Float
     , saturation : Float
     , lightness : Float
     , fontFamily : String
     , fontSize : String
+    , textPad : Float
     , textPosition : Float
     }
 
@@ -37,30 +39,26 @@ polarClock settings zone posix =
         center =
             Coord 50 50
 
-        toAngle : Int -> Float -> Float
-        toAngle max value =
-            2 * pi * (value / toFloat max)
-
         continuous =
             TimeUtils.toContinuousTimes zone posix
 
-        secondAngle =
-            toAngle 60 continuous.seconds
+        secondPercent =
+            continuous.seconds / 60
 
-        minuteAngle =
-            toAngle 60 continuous.minutes
+        minutePercent =
+            continuous.minutes / 60
 
-        hourAngle =
-            toAngle 24 continuous.hours
+        hourPercent =
+            continuous.hours / 24
 
-        weekdayAngle =
-            toAngle 7 continuous.weekdays
+        weekdayPercent =
+            continuous.weekdays / 7
 
-        monthdayAngle =
-            toAngle (TimeUtils.toDaysInMonth zone posix) continuous.days
+        monthdayPercent =
+            continuous.days / toFloat (TimeUtils.toDaysInMonth zone posix)
 
-        monthAngle =
-            toAngle 12 continuous.months
+        monthPercent =
+            continuous.months / 12
 
         toLabel value name =
             let
@@ -105,59 +103,77 @@ polarClock settings zone posix =
         innerRadius index =
             outerRadius index - settings.arcWidth
 
-        color index =
-            { hue = settings.colorInitial + (index * settings.colorDifference)
-            , saturation = settings.saturation
-            , lightness = settings.lightness
-            }
+        color index angle =
+            let
+                hue =
+                    settings.colorInitial + (index * settings.colorDifference)
+            in
+            hslToString (angle + hue) settings.saturation settings.lightness
 
         textAttrs =
             [ fontSize settings.fontSize
             , fontFamily settings.fontFamily
             ]
 
-        parameterisedArc index id label angle =
+        parameterisedArc index id label percent =
             let
+                gapAngle =
+                    (settings.gapWidth / 2) / ((inner + outer) / 2)
+
                 inner =
                     innerRadius index
 
                 outer =
                     outerRadius index
 
+                start =
+                    gapAngle
+
+                end =
+                    (2 * pi - 2 * gapAngle) * percent + gapAngle
+
                 textPosition =
                     Basics.max 0.0 (Basics.min 1.0 settings.textPosition)
 
                 textRadius =
                     (inner * textPosition) + (outer * (1 - textPosition))
+
+                col =
+                    color index (2 * pi * percent)
             in
-            arc id center label textRadius textAttrs (color index) inner outer angle
+            arc id
+                center
+                label
+                settings.textPad
+                textRadius
+                textAttrs
+                col
+                settings.arcBorderRadius
+                inner
+                outer
+                start
+                end
     in
     svg
         [ viewBox "0 0 100 100" ]
-        [ parameterisedArc 0 "seconds" secondLabel secondAngle
-        , parameterisedArc 1 "minutes" minuteLabel minuteAngle
-        , parameterisedArc 2 "hours" hourLabel hourAngle
-        , parameterisedArc 3 "day-of-week" weekdayLabel weekdayAngle
-        , parameterisedArc 4 "day-of-month" monthdayLabel monthdayAngle
-        , parameterisedArc 5 "month" monthLabel monthAngle
-        , circle "year" center yearLabel textAttrs (color 6) (outerRadius 6)
+        [ parameterisedArc 0 "seconds" secondLabel secondPercent
+        , parameterisedArc 1 "minutes" minuteLabel minutePercent
+        , parameterisedArc 2 "hours" hourLabel hourPercent
+        , parameterisedArc 3 "day-of-week" weekdayLabel weekdayPercent
+        , parameterisedArc 4 "day-of-month" monthdayLabel monthdayPercent
+        , parameterisedArc 5 "month" monthLabel monthPercent
+        , circle "year" center yearLabel textAttrs (color 6 0) (outerRadius 6)
         ]
 
 
-arc : String -> Coord -> String -> Float -> List (Html.Attribute msg) -> HSL -> Float -> Float -> Float -> Html msg
-arc id center label textRadius textAttrs hsl innerRadius outerRadius angle =
+arc : String -> Coord -> String -> Float -> Float -> List (Html.Attribute msg) -> String -> Float -> Float -> Float -> Float -> Float -> Html msg
+arc id center label textPad textRadius textAttrs color borderRadius innerRadius outerRadius startAngle endAngle =
     let
-        color =
-            hslToString (hsl.hue + angle) hsl.saturation hsl.lightness
-
-        textPad =
-            0.65
-
         centerRadius =
             (innerRadius + outerRadius) / 2
 
         textFlipped =
-            angle < (pi / 2) || angle > (3 * pi / 2)
+            startAngle < (pi / 2) || startAngle > (3 * pi / 2)
 
         textPadRadius =
             textPad / centerRadius
@@ -175,7 +191,7 @@ arc id center label textRadius textAttrs hsl innerRadius outerRadius angle =
         , Svg.path
             [ fill color
             , stroke "none"
-            , d (SvgUtils.arcShapePath center innerRadius outerRadius 0 angle 0.6)
+            , d (SvgUtils.arcShapePath center innerRadius outerRadius startAngle endAngle borderRadius)
             ]
             []
 
@@ -185,7 +201,7 @@ arc id center label textRadius textAttrs hsl innerRadius outerRadius angle =
             , fill "none"
             , stroke "none"
             , d
-                (SvgUtils.arcLinePath center textRadius textPadRadius (angle - textPadRadius) (not textFlipped))
+                (SvgUtils.arcLinePath center textRadius (startAngle + textPadRadius) (endAngle - textPadRadius) (not textFlipped))
             ]
             []
 
@@ -215,12 +231,9 @@ arc id center label textRadius textAttrs hsl innerRadius outerRadius angle =
         ]
 
 
-circle : String -> Coord -> String -> List (Html.Attribute msg) -> HSL -> Float -> Html msg
-circle id center label externalTextAttrs hsl radius =
+circle : String -> Coord -> String -> List (Html.Attribute msg) -> String -> Float -> Html msg
+circle id center label externalTextAttrs color radius =
     let
-        color =
-            hslToString hsl.hue hsl.saturation hsl.lightness
-
         textAttrs =
             externalTextAttrs
                 ++ [ x "50%"
