@@ -131,7 +131,11 @@ viewDebug model =
                 ]
     in
     div [ id "debug" ]
-        [ buttonGroup "Second" 1000
+        [ text ("Offset: " ++ String.fromInt model.debugOffset)
+        , buttonGroup "1 ms" 1
+        , buttonGroup "10 ms" 10
+        , buttonGroup "100 ms" 100
+        , buttonGroup "Second" 1000
         , buttonGroup "Minute" (1000 * 60)
         , buttonGroup "Hour" (1000 * 60 * 60)
         , buttonGroup "Day" (1000 * 60 * 60 * 24)
