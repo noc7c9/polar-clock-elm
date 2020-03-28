@@ -173,7 +173,7 @@ arc id center label textPad textRadius textAttrs color borderRadius innerRadius 
             (innerRadius + outerRadius) / 2
 
         textFlipped =
-            startAngle < (pi / 2) || startAngle > (3 * pi / 2)
+            endAngle < (pi / 2) || endAngle > (3 * pi / 2)
 
         textPadRadius =
             textPad / centerRadius
