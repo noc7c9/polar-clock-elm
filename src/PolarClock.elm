@@ -255,7 +255,7 @@ circle id center label externalTextAttrs color radius =
                 ++ [ x "50%"
                    , y "50%"
                    , textAnchor "middle"
-                   , dominantBaseline "middle"
+                   , dominantBaseline "central"
                    ]
     in
     g []

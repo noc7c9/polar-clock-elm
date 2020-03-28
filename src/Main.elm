@@ -10,6 +10,22 @@ import Task
 import Time
 
 
+polarClockSettings =
+    { arcWidth = 6.125
+    , gapWidth = 1
+    , margin = 3
+    , arcBorderRadius = 0.6
+    , colorInitial = 0
+    , colorDifference = pi / 8
+    , saturation = 0.6
+    , lightness = 0.5
+    , fontFamily = "'Lato', sans-serif"
+    , fontSize = "2.6px"
+    , textPosition = 0.375
+    , textPad = 1
+    }
+
+
 
 -- MAIN
 
@@ -25,11 +41,6 @@ main =
 
 
 -- MODEL
-
-
-type TimeValue
-    = RealTime Time.Posix
-    | ManualTime Int
 
 
 type alias Model =
@@ -156,22 +167,7 @@ viewDebug model =
 viewPolarClock : Model -> Html Msg
 viewPolarClock model =
     let
-        settings =
-            { arcWidth = 5
-            , gapWidth = 1
-            , margin = 3
-            , arcBorderRadius = 0.6
-            , colorInitial = pi
-            , colorDifference = -pi / 8
-            , saturation = 0.65
-            , lightness = 0.5
-            , fontFamily = "'Lato', sans-serif"
-            , fontSize = "2.6px"
-            , textPosition = 0.375
-            , textPad = 0.5
-            }
-
         time =
             Time.millisToPosix (model.debugOffset + Time.posixToMillis model.time)
     in
-    polarClock settings model.zone time
+    polarClock polarClockSettings model.zone time
