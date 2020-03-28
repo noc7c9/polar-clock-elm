@@ -16,6 +16,7 @@ svg {
     width: 100vw;
     height: 100vh;
     background-color: #151515;
+    user-select: none;
 }
 
 #debug {
