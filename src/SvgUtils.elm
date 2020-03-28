@@ -35,11 +35,64 @@ arcShapePath center innerRadius outerRadius startAngle endAngle rawBorderRadius 
             -- Clamp to half the stroke width so the arc ends are half-circles
             Basics.min rawBorderRadius ((outerRadius - innerRadius) / 2)
 
+        angleDiff =
+            endAngle - startAngle
+
+        tooNarrowForBorderRadius =
+            angleDiff <= (2 * pi / 1000)
+    in
+    if rawBorderRadius == 0 || tooNarrowForBorderRadius then
+        flatArcShapePath center innerRadius outerRadius startAngle endAngle
+
+    else
+        roundedArcShapePath center innerRadius outerRadius startAngle endAngle borderRadius
+
+
+flatArcShapePath : Coord -> Float -> Float -> Float -> Float -> String
+flatArcShapePath center innerRadius outerRadius startAngle endAngle =
+    let
+        innerStart =
+            polarToCartesian center innerRadius startAngle
+
+        innerEnd =
+            polarToCartesian center innerRadius endAngle
+
+        outerStart =
+            polarToCartesian center outerRadius startAngle
+
+        outerEnd =
+            polarToCartesian center outerRadius endAngle
+
+        innerLargeArc =
+            (endAngle - startAngle) > pi
+
+        outerLargeArc =
+            (endAngle - startAngle) > pi
+    in
+    String.join " "
+        [ moveTo innerStart
+        , arcTo innerRadius innerRadius innerEnd innerLargeArc True
+        , lineTo outerEnd
+        , arcTo outerRadius outerRadius outerStart outerLargeArc False
+        , join
+        ]
+
+
+roundedArcShapePath : Coord -> Float -> Float -> Float -> Float -> Float -> String
+roundedArcShapePath center innerRadius outerRadius startAngle endAngle rawBorderRadius =
+    let
+        borderRadius =
+            -- Clamp to half the stroke width so the arc ends are half-circles
+            Basics.min rawBorderRadius ((outerRadius - innerRadius) / 2)
+
+        diffAngle =
+            endAngle - startAngle
+
         outerBorderRadiusAngle =
-            borderRadius / outerRadius
+            Basics.min (borderRadius / outerRadius) diffAngle
 
         innerBorderRadiusAngle =
-            borderRadius / innerRadius
+            Basics.min (borderRadius / innerRadius) diffAngle
 
         innerStartAngle =
             startAngle + innerBorderRadiusAngle
