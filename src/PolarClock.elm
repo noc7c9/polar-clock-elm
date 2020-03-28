@@ -10,10 +10,24 @@ import TimeUtils
 import Utils exposing (Coord, hslToString)
 
 
+type alias HSL =
+    { hue : Float
+    , saturation : Float
+    , lightness : Float
+    }
+
+
 type alias Settings =
     { arcWidth : Float
     , gapWidth : Float
     , margin : Float
+    , colorInitial : Float
+    , colorDifference : Float
+    , saturation : Float
+    , lightness : Float
+    , fontFamily : String
+    , fontSize : String
+    , textPosition : Float
     }
 
 
@@ -90,27 +104,51 @@ polarClock settings zone posix =
 
         innerRadius index =
             outerRadius index - settings.arcWidth
+
+        color index =
+            { hue = settings.colorInitial + (index * settings.colorDifference)
+            , saturation = settings.saturation
+            , lightness = settings.lightness
+            }
+
+        textAttrs =
+            [ fontSize settings.fontSize
+            , fontFamily settings.fontFamily
+            ]
+
+        parameterisedArc index id label angle =
+            let
+                inner =
+                    innerRadius index
+
+                outer =
+                    outerRadius index
+
+                textPosition =
+                    Basics.max 0.0 (Basics.min 1.0 settings.textPosition)
+
+                textRadius =
+                    (inner * textPosition) + (outer * (1 - textPosition))
+            in
+            arc id center label textRadius textAttrs (color index) inner outer angle
     in
     svg
         [ viewBox "0 0 100 100" ]
-        [ arc "seconds" center secondLabel 0 (innerRadius 0) (outerRadius 0) secondAngle
-        , arc "minutes" center minuteLabel 60 (innerRadius 1) (outerRadius 1) minuteAngle
-        , arc "hours" center hourLabel 120 (innerRadius 2) (outerRadius 2) hourAngle
-        , arc "day-of-week" center weekdayLabel 180 (innerRadius 3) (outerRadius 3) weekdayAngle
-        , arc "day-of-month" center monthdayLabel 240 (innerRadius 4) (outerRadius 4) monthdayAngle
-        , arc "month" center monthLabel 300 (innerRadius 5) (outerRadius 5) monthAngle
-        , arc "year" center yearLabel 360 0.1 (outerRadius 6) (2 * pi - 0.0000001)
+        [ parameterisedArc 0 "seconds" secondLabel secondAngle
+        , parameterisedArc 1 "minutes" minuteLabel minuteAngle
+        , parameterisedArc 2 "hours" hourLabel hourAngle
+        , parameterisedArc 3 "day-of-week" weekdayLabel weekdayAngle
+        , parameterisedArc 4 "day-of-month" monthdayLabel monthdayAngle
+        , parameterisedArc 5 "month" monthLabel monthAngle
+        , circle "year" center yearLabel textAttrs (color 6) (outerRadius 6)
         ]
 
 
-arc : String -> Coord -> String -> Float -> Float -> Float -> Float -> Html msg
-arc id center label hueOffset innerRadius outerRadius angle =
+arc : String -> Coord -> String -> Float -> List (Html.Attribute msg) -> HSL -> Float -> Float -> Float -> Html msg
+arc id center label textRadius textAttrs hsl innerRadius outerRadius angle =
     let
         color =
-            hslToString (hueOffset + angle) 0.8 0.5
-
-        fontSize =
-            "2.4px"
+            hslToString (hsl.hue + angle) hsl.saturation hsl.lightness
 
         textPad =
             0.65
@@ -147,27 +185,16 @@ arc id center label hueOffset innerRadius outerRadius angle =
             , fill "none"
             , stroke "none"
             , d
-                (SvgUtils.arcLinePath center
-                    (if textFlipped then
-                        centerRadius
-
-                     else
-                        centerRadius + 1.5
-                    )
-                    textPadRadius
-                    (angle - textPadRadius)
-                    (not textFlipped)
-                )
+                (SvgUtils.arcLinePath center textRadius textPadRadius (angle - textPadRadius) (not textFlipped))
             ]
             []
 
         -- The label text
         , Svg.text_
-            [ Svg.Attributes.fontSize fontSize
-            , fontFamily "'Lato', sans-serif"
-            ]
+            textAttrs
             [ Svg.textPath
                 [ xlinkHref ("#" ++ id)
+                , dominantBaseline "middle"
                 , startOffset
                     (if textFlipped then
                         "100%"
@@ -185,4 +212,32 @@ arc id center label hueOffset innerRadius outerRadius angle =
                 ]
                 [ Svg.text label ]
             ]
+        ]
+
+
+circle : String -> Coord -> String -> List (Html.Attribute msg) -> HSL -> Float -> Html msg
+circle id center label externalTextAttrs hsl radius =
+    let
+        color =
+            hslToString hsl.hue hsl.saturation hsl.lightness
+
+        textAttrs =
+            externalTextAttrs
+                ++ [ x "50%"
+                   , y "50%"
+                   , textAnchor "middle"
+                   , dominantBaseline "middle"
+                   ]
+    in
+    g []
+        [ -- The circle
+          Svg.circle
+            [ fill color
+            , stroke "none"
+            , cx (String.fromFloat center.x)
+            , cy (String.fromFloat center.y)
+            , r (String.fromFloat radius)
+            ]
+            []
+        , Svg.text_ textAttrs [ Svg.text label ]
         ]

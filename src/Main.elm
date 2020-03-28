@@ -156,6 +156,13 @@ viewPolarClock model =
             { arcWidth = 5
             , gapWidth = 1
             , margin = 3
+            , colorInitial = pi
+            , colorDifference = -pi / 8
+            , saturation = 0.8
+            , lightness = 0.5
+            , fontFamily = "'Lato', sans-serif"
+            , fontSize = "2.6px"
+            , textPosition = 0.375
             }
 
         time =
