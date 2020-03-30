@@ -31,6 +31,7 @@ type alias Settings =
     , fontSize : String
     , textPad : Float
     , textPosition : Float
+    , hideYearCircle : Bool
     }
 
 
@@ -158,16 +159,20 @@ polarClock settings zone posix =
         yearColorOffset =
             continuous.years * settings.yearColorDifference
     in
-    svg
-        [ viewBox "0 0 100 100" ]
+    svg [ viewBox "0 0 100 100" ] <|
         [ parameterisedArc 0 "seconds" secondLabel secondPercent
         , parameterisedArc 1 "minutes" minuteLabel minutePercent
         , parameterisedArc 2 "hours" hourLabel hourPercent
         , parameterisedArc 3 "day-of-week" weekdayLabel weekdayPercent
         , parameterisedArc 4 "day-of-month" monthdayLabel monthdayPercent
         , parameterisedArc 5 "month" monthLabel monthPercent
-        , circle "year" center yearLabel textAttrs (color 6 yearColorOffset) (outerRadius 6)
         ]
+            ++ (if settings.hideYearCircle then
+                    []
+
+                else
+                    [ circle "year" center yearLabel textAttrs (color 6 yearColorOffset) (outerRadius 6) ]
+               )
 
 
 arc : String -> Coord -> String -> Float -> Float -> List (Html.Attribute msg) -> String -> Float -> Float -> Float -> Float -> Float -> Html msg

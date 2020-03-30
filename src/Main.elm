@@ -24,6 +24,7 @@ polarClockSettings =
     , fontSize = "2.6px"
     , textPosition = 0.375
     , textPad = 1
+    , hideYearCircle = False
     }
 
 
