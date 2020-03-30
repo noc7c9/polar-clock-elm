@@ -24,6 +24,7 @@ type alias ContinuousTimes =
     , days : Float
     , weekdays : Float
     , months : Float
+    , years : Float
     }
 
 
@@ -50,6 +51,19 @@ toContinuousTimes zone posix =
 
         months =
             toFloat (toMonthInt zone posix) + (days / toFloat (toDaysInMonth zone posix))
+
+        years =
+            let
+                year =
+                    toYear zone posix |> toFloat
+
+                yearday =
+                    toYearday zone posix |> toFloat
+
+                daysInYear =
+                    toDaysInYear zone posix |> toFloat
+            in
+            year + ((yearday - 1) / daysInYear)
     in
     { seconds = seconds
     , minutes = minutes
@@ -57,6 +71,7 @@ toContinuousTimes zone posix =
     , days = days
     , weekdays = weekdays
     , months = months
+    , years = years
     }
 
 
@@ -71,6 +86,19 @@ isLeapYear zone posix =
             toYear zone posix
     in
     (modBy 400 year == 0) || (modBy 100 year /= 0) && (modBy 4 year == 0)
+
+
+
+-- Returns the number of days in year
+
+
+toDaysInYear : Zone -> Posix -> Int
+toDaysInYear zone posix =
+    if isLeapYear zone posix then
+        366
+
+    else
+        365
 
 
 
@@ -152,12 +180,17 @@ toMonthInt zone posix =
 
 toDaysInMonth : Zone -> Posix -> Int
 toDaysInMonth zone posix =
-    case toMonth zone posix of
+    toMonth zone posix |> getDaysInMonth (isLeapYear zone posix)
+
+
+getDaysInMonth : Bool -> Month -> Int
+getDaysInMonth isLeapYear_ month =
+    case month of
         Jan ->
             31
 
         Feb ->
-            if isLeapYear zone posix then
+            if isLeapYear_ then
                 29
 
             else
@@ -292,3 +325,93 @@ toDayOrdinal zone posix =
                 "th"
     in
     String.fromInt day ++ suffix
+
+
+
+-- Returns the current day in the year
+-- eg: 1st Jan is 1 and 31st Dec is either 365 or 366
+
+
+toYearday : Zone -> Posix -> Int
+toYearday zone posix =
+    let
+        isLeapYear_ =
+            isLeapYear zone posix
+
+        currMonth =
+            toMonth zone posix
+
+        prevMonth =
+            getPreviousMonth currMonth
+
+        daysInCurrentMonth =
+            toDay zone posix
+
+        daysInPreviousMonths =
+            case prevMonth of
+                Nothing ->
+                    0
+
+                Just prevMonth_ ->
+                    getCumulativeDaysInMonths isLeapYear_ prevMonth_
+    in
+    daysInCurrentMonth + daysInPreviousMonths
+
+
+getPreviousMonth : Month -> Maybe Month
+getPreviousMonth month =
+    case month of
+        Jan ->
+            Nothing
+
+        Feb ->
+            Just Jan
+
+        Mar ->
+            Just Feb
+
+        Apr ->
+            Just Mar
+
+        May ->
+            Just Apr
+
+        Jun ->
+            Just May
+
+        Jul ->
+            Just Jun
+
+        Aug ->
+            Just Jul
+
+        Sep ->
+            Just Aug
+
+        Oct ->
+            Just Sep
+
+        Nov ->
+            Just Oct
+
+        Dec ->
+            Just Nov
+
+
+getCumulativeDaysInMonths : Bool -> Month -> Int
+getCumulativeDaysInMonths isLeapYear_ month =
+    let
+        rec : Month -> Int -> Int
+        rec currMonth total =
+            let
+                daysInCurrMonth =
+                    getDaysInMonth isLeapYear_ currMonth
+            in
+            case getPreviousMonth currMonth of
+                Nothing ->
+                    total + daysInCurrMonth
+
+                Just prevMonth ->
+                    rec prevMonth (total + daysInCurrMonth)
+    in
+    rec month 0

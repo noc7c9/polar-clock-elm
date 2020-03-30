@@ -17,6 +17,7 @@ polarClockSettings =
     , arcBorderRadius = 0.6
     , colorInitial = 0
     , colorDifference = pi / 8
+    , yearColorDifference = 2.25 * pi
     , saturation = 0.6
     , lightness = 0.5
     , fontFamily = "'Lato', sans-serif"

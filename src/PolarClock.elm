@@ -24,6 +24,7 @@ type alias Settings =
     , arcBorderRadius : Float
     , colorInitial : Float
     , colorDifference : Float
+    , yearColorDifference : Float
     , saturation : Float
     , lightness : Float
     , fontFamily : String
@@ -153,6 +154,9 @@ polarClock settings zone posix =
                 outer
                 start
                 end
+
+        yearColorOffset =
+            continuous.years * settings.yearColorDifference
     in
     svg
         [ viewBox "0 0 100 100" ]
@@ -162,7 +166,7 @@ polarClock settings zone posix =
         , parameterisedArc 3 "day-of-week" weekdayLabel weekdayPercent
         , parameterisedArc 4 "day-of-month" monthdayLabel monthdayPercent
         , parameterisedArc 5 "month" monthLabel monthPercent
-        , circle "year" center yearLabel textAttrs (color 6 0) (outerRadius 6)
+        , circle "year" center yearLabel textAttrs (color 6 yearColorOffset) (outerRadius 6)
         ]
 
 
