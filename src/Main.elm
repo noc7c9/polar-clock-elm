@@ -47,6 +47,7 @@ main =
 type alias Model =
     { zone : Time.Zone
     , time : Time.Posix
+    , displayDebug : Bool
     , debugOffset : Int
     , debugPaused : Bool
     }
@@ -58,6 +59,7 @@ init _ =
         model =
             { zone = Time.utc
             , time = Time.millisToPosix 0
+            , displayDebug = False
             , debugOffset = 0
             , debugPaused = False
             }
@@ -126,10 +128,14 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ viewPolarClock model
-        , viewDebug model
-        ]
+    div [] <|
+        [ viewPolarClock model ]
+            ++ (if model.displayDebug then
+                    [ viewDebug model ]
+
+                else
+                    []
+               )
 
 
 viewDebug : Model -> Html Msg
