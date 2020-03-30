@@ -137,6 +137,13 @@ view model =
                 else
                     []
                )
+            ++ [ span [ id "inspiration" ]
+                    [ Html.text "Inspired by "
+                    , a
+                        [ href "http://blog.pixelbreaker.com/polarclock" ]
+                        [ text "pixelbreaker" ]
+                    ]
+               ]
 
 
 viewDebug : Model -> Html Msg
