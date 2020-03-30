@@ -46,8 +46,8 @@ main =
 
 
 type alias Model =
-    { zone : Time.Zone
-    , time : Time.Posix
+    { zone : Maybe Time.Zone
+    , time : Maybe Time.Posix
     , displayDebug : Bool
     , debugOffset : Int
     , debugPaused : Bool
@@ -58,8 +58,8 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     let
         model =
-            { zone = Time.utc
-            , time = Time.millisToPosix 0
+            { zone = Nothing
+            , time = Nothing
             , displayDebug = False
             , debugOffset = 0
             , debugPaused = False
@@ -90,10 +90,10 @@ update msg model =
         updatedModel =
             case msg of
                 Tick newTime ->
-                    { model | time = newTime }
+                    { model | time = Just newTime }
 
                 AdjustTimeZone newZone ->
-                    { model | zone = newZone }
+                    { model | zone = Just newZone }
 
                 DebugOffsetIncrement value ->
                     { model | debugOffset = model.debugOffset + value }
@@ -175,7 +175,12 @@ viewDebug model =
 viewPolarClock : Model -> Html Msg
 viewPolarClock model =
     let
-        time =
-            Time.millisToPosix (model.debugOffset + Time.posixToMillis model.time)
+        withOffset t =
+            Time.posixToMillis t + model.debugOffset |> Time.millisToPosix
     in
-    polarClock polarClockSettings model.zone time
+    case ( model.zone, Maybe.map withOffset model.time ) of
+        ( Just zone, Just time ) ->
+            polarClock polarClockSettings zone time
+
+        _ ->
+            div [] []
