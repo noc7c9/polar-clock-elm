@@ -5395,7 +5395,26 @@ var $author$project$Main$update = F2(
 		}();
 		return _Utils_Tuple2(updatedModel, $elm$core$Platform$Cmd$none);
 	});
+var $elm$html$Html$a = _VirtualDom_node('a');
 var $elm$html$Html$div = _VirtualDom_node('div');
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$string(string));
+	});
+var $elm$html$Html$Attributes$href = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'href',
+		_VirtualDom_noJavaScriptUri(url));
+};
+var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
+var $elm$html$Html$span = _VirtualDom_node('span');
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $author$project$Main$DebugOffsetDecrement = function (a) {
 	return {$: 'DebugOffsetDecrement', a: a};
 };
@@ -5405,15 +5424,6 @@ var $author$project$Main$DebugOffsetIncrement = function (a) {
 var $author$project$Main$DebugOffsetReset = {$: 'DebugOffsetReset'};
 var $author$project$Main$DebugTogglePause = {$: 'DebugTogglePause'};
 var $elm$html$Html$button = _VirtualDom_node('button');
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $elm$html$Html$Attributes$stringProperty = F2(
-	function (key, string) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			$elm$json$Json$Encode$string(string));
-	});
-var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
 };
@@ -5431,8 +5441,6 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		'click',
 		$elm$json$Json$Decode$succeed(msg));
 };
-var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
-var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $author$project$Main$viewDebug = function (model) {
 	var buttonGroup = F2(
 		function (label, offset) {
@@ -6388,10 +6396,34 @@ var $author$project$Main$view = function (model) {
 				[
 					$author$project$Main$viewPolarClock(model)
 				]),
-			model.displayDebug ? _List_fromArray(
-				[
-					$author$project$Main$viewDebug(model)
-				]) : _List_Nil));
+			_Utils_ap(
+				model.displayDebug ? _List_fromArray(
+					[
+						$author$project$Main$viewDebug(model)
+					]) : _List_Nil,
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$span,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$id('inspiration')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Inspired by '),
+								A2(
+								$elm$html$Html$a,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$href('http://blog.pixelbreaker.com/polarclock')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('pixelbreaker')
+									]))
+							]))
+					]))));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
